@@ -8,49 +8,32 @@ export class PaginatorHttp<Entity, Params = undefined>
 {
   constructor(
     private readonly http: Http,
-    private nextPath?: string,
-    private nextParams?: Params | string,
+    private path?: string,
+    private params?: Params | string,
     private readonly meta?: HttpMetaParams,
     private readonly direction: mastodon.Direction = "next",
   ) {}
 
-  async next(): Promise<IteratorResult<Entity, undefined>> {
-    if (this.nextPath == undefined) {
-      return { done: true, value: undefined };
+  async *values(): AsyncIterableIterator<Entity> {
+    let path = this.path;
+    let params = this.params;
+
+    while (path != undefined) {
+      const response = await this.http.request({
+        method: "GET",
+        path,
+        search: params as Record<string, unknown>,
+        ...this.meta,
+      });
+
+      const nextUrl = this.getLink(response.headers.get("link"));
+      path = nextUrl?.pathname;
+      params = nextUrl?.search.replace(/^\?/, "");
+
+      const data = (await response.data) as Entity;
+
+      yield data;
     }
-
-    const response = await this.http.request({
-      method: "GET",
-      path: this.nextPath,
-      search: this.nextParams as Record<string, unknown>,
-      ...this.meta,
-    });
-
-    const nextUrl = this.getLink(response.headers.get("link"));
-    this.nextPath = nextUrl?.pathname;
-    this.nextParams = nextUrl?.search.replace(/^\?/, "");
-
-    const data = (await response.data) as Entity;
-
-    return {
-      done: false,
-      value: data,
-    };
-  }
-
-  async return(
-    value?: undefined | Promise<undefined>,
-  ): Promise<IteratorResult<Entity, undefined>> {
-    this.clear();
-    return {
-      done: true,
-      value: await value,
-    };
-  }
-
-  async throw(e: unknown): Promise<IteratorResult<Entity, undefined>> {
-    this.clear();
-    throw e;
   }
 
   then<TResult1 = Entity, TResult2 = never>(
@@ -61,13 +44,9 @@ export class PaginatorHttp<Entity, Params = undefined>
       reason: unknown,
     ) => TResult2 | PromiseLike<TResult2> = Promise.reject.bind(Promise),
   ): Promise<TResult1 | TResult2> {
-    // we assume the first item won't be undefined
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.next().then((value) => onfulfilled(value.value!), onrejected);
-  }
-
-  values(): AsyncIterableIterator<Entity> {
-    return this[Symbol.asyncIterator]();
+    return this.values()
+      .next()
+      .then((value) => onfulfilled(value.value), onrejected);
   }
 
   getDirection(): mastodon.Direction {
@@ -77,8 +56,8 @@ export class PaginatorHttp<Entity, Params = undefined>
   setDirection(direction: mastodon.Direction): PaginatorHttp<Entity, Params> {
     return new PaginatorHttp(
       this.http,
-      this.nextPath,
-      this.nextParams,
+      this.path,
+      this.params,
       this.meta,
       direction,
     );
@@ -89,12 +68,7 @@ export class PaginatorHttp<Entity, Params = undefined>
     undefined,
     Params | string | undefined
   > {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return this as any as AsyncIterator<
-      Entity,
-      undefined,
-      Params | string | undefined
-    >;
+    return this.values();
   }
 
   private getLink(value?: string | null): URL | undefined {
@@ -108,20 +82,5 @@ export class PaginatorHttp<Entity, Params = undefined>
     }
 
     return new URL(parsed);
-  }
-
-  private clear() {
-    this.nextPath = undefined;
-    this.nextParams = undefined;
-  }
-
-  clone(): PaginatorHttp<Entity, Params> {
-    return new PaginatorHttp(
-      this.http,
-      this.nextPath,
-      this.nextParams,
-      this.meta,
-      this.direction,
-    );
   }
 }

@@ -13,9 +13,11 @@ it("searches", async () => {
 
 it("can be iterated over", async () => {
   await using session = await sessions.acquire();
-  const results = session.rest.v2.search.list({
-    q: "mastodon",
-  });
+  const results = session.rest.v2.search
+    .list({
+      q: "mastodon",
+    })
+    .values();
 
   const p1 = await results.next();
 

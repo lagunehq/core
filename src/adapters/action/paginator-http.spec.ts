@@ -16,7 +16,7 @@ describe("PaginatorHttp", () => {
   it("sends a request", async () => {
     const paginator = new PaginatorHttp(http, "/v1/api/timelines", {
       foo: "bar",
-    });
+    }).values();
     await paginator.next();
     expect(http.request).toBeCalledWith({
       method: "GET",
@@ -43,7 +43,7 @@ describe("PaginatorHttp", () => {
         link: '<https://mastodon.social/api/v1/timelines/home?max_id=109382006402042919>; rel="next", <https://mastodon.social/api/v1/timelines/home?min_id=109382039876197520>; rel="prev"',
       }),
     });
-    const paginator = new PaginatorHttp(http, "/v1/api/timelines");
+    const paginator = new PaginatorHttp(http, "/v1/api/timelines").values();
     await paginator.next();
     await paginator.next();
     expect(http.request).toBeCalledWith({
@@ -67,8 +67,9 @@ describe("PaginatorHttp", () => {
     paginator = paginator.setDirection("prev");
     expect(paginator.getDirection()).toBe("prev");
 
-    await paginator.next();
-    await paginator.next();
+    const pages = paginator.values();
+    await pages.next();
+    await pages.next();
     expect(http.request).toBeCalledWith({
       method: "GET",
       search: "min_id=109382039876197520",
@@ -82,7 +83,7 @@ describe("PaginatorHttp", () => {
         link: '<https://mastodon.social/api/v1/timelines/home?min_id=109382039876197520>; rel="prev", <https://mastodon.social/api/v1/timelines/home?max_id=109382006402042919>; rel="next"',
       }),
     });
-    const paginator = new PaginatorHttp(http, "/v1/api/timelines");
+    const paginator = new PaginatorHttp(http, "/v1/api/timelines").values();
     await paginator.next();
     await paginator.next();
     expect(http.request).toBeCalledWith({
@@ -93,7 +94,7 @@ describe("PaginatorHttp", () => {
   });
 
   it("returns done when next link does not exist", async () => {
-    const paginator = new PaginatorHttp(http, "/v1/api/timelines");
+    const paginator = new PaginatorHttp(http, "/v1/api/timelines").values();
     await paginator.next();
     const result = await paginator.next();
     expect(result).toEqual({
@@ -135,50 +136,6 @@ describe("PaginatorHttp", () => {
     });
   });
 
-  it("clones itself", async () => {
-    const paginator1 = new PaginatorHttp(http, "/some/api", { query: "value" });
-    const paginator2 = paginator1.clone();
-
-    await paginator1.next();
-    await paginator2.next();
-
-    expect(http.request).toBeCalledTimes(2);
-    expect(http.request).nthCalledWith(1, {
-      method: "GET",
-      search: { query: "value" },
-      path: "/some/api",
-    });
-    expect(http.request).nthCalledWith(2, {
-      method: "GET",
-      search: { query: "value" },
-      path: "/some/api",
-    });
-
-    expect(paginator1).not.toBe(paginator2);
-  });
-
-  it("terminates pagination by return", async () => {
-    const paginator = new PaginatorHttp(http, "/v1/api/timelines");
-    await paginator.return();
-    const result = await paginator.next();
-    expect(result).toEqual({
-      done: true,
-      value: undefined,
-    });
-  });
-
-  it("terminates pagination by throw", async () => {
-    const paginator = new PaginatorHttp(http, "/v1/api/timelines");
-    await expect(() => paginator.throw("some error")).rejects.toBe(
-      "some error",
-    );
-    const result = await paginator.next();
-    expect(result).toEqual({
-      done: true,
-      value: undefined,
-    });
-  });
-
   it("parse array in url query string correctly", async () => {
     http.request.mockReturnValue({
       headers: new Headers({
@@ -187,7 +144,7 @@ describe("PaginatorHttp", () => {
     });
     const paginator = new PaginatorHttp(http, "/v1/api/notifications", {
       types: ["mention"],
-    });
+    }).values();
     await paginator.next();
     await paginator.next();
     expect(http.request).toBeCalledWith({
