@@ -15,8 +15,8 @@ export interface ActionDispatcher<T extends AnyAction> {
   [Symbol.dispose]?(): void;
 }
 
-export interface ActionDispatcherHook<T extends AnyAction, U = unknown> {
-  beforeDispatch(action: T): T;
-  dispatch(action: T): U | Promise<U> | false;
-  afterDispatch(action: T, result: U | Promise<U>): U;
-}
+// export interface ActionDispatcherHook<T extends AnyAction, U = unknown> {
+//   beforeDispatch(action: T): T;
+//   dispatch(action: T): U | Promise<U> | false;
+//   afterDispatch(action: T, result: U | Promise<U>): U;
+// }

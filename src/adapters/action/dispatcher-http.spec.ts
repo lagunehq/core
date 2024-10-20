@@ -1,9 +1,9 @@
 import { httpGet, HttpMockImpl, httpPost } from "../../__mocks__";
 import { MastoHttpError, MastoTimeoutError } from "../errors";
+import { ActionDispatcherHookMastodon } from "../hook/hook-action-dispatcher-mastodon";
 import { HttpActionDispatcher } from "./dispatcher-http";
-import { HttpActionDispatcherHookMastodon } from "./dispatcher-http-hook-mastodon";
 
-describe("DispatcherHttp", () => {
+describe("HttpActionDispatcher", () => {
   afterEach(() => {
     httpGet.mockClear();
     httpPost.mockClear();
@@ -13,7 +13,7 @@ describe("DispatcherHttp", () => {
     const http = new HttpMockImpl();
     const dispatcher = new HttpActionDispatcher(
       http,
-      new HttpActionDispatcherHookMastodon(http),
+      new ActionDispatcherHookMastodon(http),
     );
 
     httpPost.mockResolvedValueOnce({ id: "1" });
@@ -43,7 +43,7 @@ describe("DispatcherHttp", () => {
     const http = new HttpMockImpl();
     const dispatcher = new HttpActionDispatcher(
       http,
-      new HttpActionDispatcherHookMastodon(http, 1),
+      new ActionDispatcherHookMastodon(http, 1),
     );
 
     httpPost.mockResolvedValueOnce({ id: "1" });
@@ -65,7 +65,7 @@ describe("DispatcherHttp", () => {
     const http = new HttpMockImpl();
     const dispatcher = new HttpActionDispatcher(
       http,
-      new HttpActionDispatcherHookMastodon(http),
+      new ActionDispatcherHookMastodon(http),
     );
 
     httpPost.mockResolvedValueOnce({ id: "1" });
@@ -85,7 +85,7 @@ describe("DispatcherHttp", () => {
     const http = new HttpMockImpl();
     const dispatcher = new HttpActionDispatcher(
       http,
-      new HttpActionDispatcherHookMastodon(http),
+      new ActionDispatcherHookMastodon(http),
     );
 
     httpPost.mockResolvedValueOnce({ id: "1" });

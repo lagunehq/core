@@ -1,6 +1,7 @@
 import {
   type Http,
   type HttpConfig,
+  type HttpHook,
   type HttpRequestParams,
   type HttpRequestResult,
   type Logger,
@@ -20,20 +21,31 @@ export class HttpNativeImpl extends BaseHttp implements Http {
     private readonly serializer: Serializer,
     private readonly config: HttpConfig,
     private readonly logger?: Logger,
+    private readonly hook?: HttpHook,
   ) {
     super();
   }
 
   async request(params: HttpRequestParams): Promise<HttpRequestResult> {
-    const request = this.createRequest(params);
+    let request = this.createRequest(params);
+
+    if (this.hook) {
+      request = await this.hook.before(request);
+    }
+
+    this.logger?.log("info", `↑ ${request.method} ${request.url}`);
+    this.logger?.log("debug", "\tbody", {
+      encoding: params.encoding,
+      body: params.body,
+    });
 
     try {
-      this.logger?.log("info", `↑ ${request.method} ${request.url}`);
-      this.logger?.log("debug", "\tbody", {
-        encoding: params.encoding,
-        body: params.body,
-      });
-      const response = await fetch(request);
+      let response = await fetch(request);
+
+      if (this.hook) {
+        response = await this.hook.after(response);
+      }
+
       if (!response.ok) {
         throw response;
       }

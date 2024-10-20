@@ -10,7 +10,8 @@ import {
 import { type mastodon } from "../../mastodon";
 import { isRecord, sleep } from "../../utils";
 import { MastoHttpError, MastoTimeoutError } from "../errors";
-import { type HttpAction, type HttpActionType } from "./dispatcher-http";
+
+type HttpActionType = "fetch" | "create" | "update" | "remove" | "list";
 
 function isHttpActionType(actionType: string): actionType is HttpActionType {
   return ["fetch", "create", "update", "remove", "list"].includes(actionType);
@@ -84,15 +85,15 @@ async function waitForMediaAttachment(
   return media;
 }
 
-export class HttpActionDispatcherHookMastodon
-  implements ActionDispatcherHook<AnyAction>
-{
+export class ActionDispatcherHookMastodon implements ActionDispatcherHook {
+  readonly type = "ActionDispatcher";
+
   constructor(
     private readonly http: Http,
     private readonly mediaTimeout = 1000 * 60,
   ) {}
 
-  beforeDispatch(action: AnyAction): HttpAction {
+  before(action: AnyAction): AnyAction {
     const type = toHttpActionType(action.type);
     const path = isHttpActionType(action.type)
       ? action.path
@@ -103,18 +104,7 @@ export class HttpActionDispatcherHookMastodon
     return { type, path, data: action.data, meta };
   }
 
-  dispatch(action: AnyAction): false | Promise<unknown> {
-    if (
-      action.type === "update" &&
-      action.path === "/api/v1/accounts/update_credentials"
-    ) {
-      return this.http.patch(action.path, action.data, action.meta);
-    }
-
-    return false;
-  }
-
-  afterDispatch(action: AnyAction, result: unknown): unknown {
+  after(result: unknown, action: AnyAction): unknown {
     if (action.type === "create" && action.path === "/api/v2/media") {
       const media = result as mastodon.v1.MediaAttachment;
       if (isRecord(action.data) && action.data?.skipPolling === true) {
