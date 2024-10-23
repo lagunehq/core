@@ -66,7 +66,7 @@ export class PaginatorHttp<Entity, Params = undefined>
     return this.next().then((value) => onfulfilled(value.value!), onrejected);
   }
 
-  values(): AsyncIterableIterator<Entity> {
+  values(): AsyncIterator<Entity> {
     return this[Symbol.asyncIterator]();
   }
 
