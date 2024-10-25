@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
+    "declaration": true,
+    "noEmit": false,
+    "sourceMap": true,
+    "outDir": "./dist/cjs"
+  },
+  "include": ["./src/**/*"],
+  "exclude": ["./**/*.spec.ts", "**/__mocks__/**"]
+}

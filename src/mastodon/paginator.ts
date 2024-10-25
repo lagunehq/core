@@ -27,7 +27,7 @@ export interface Paginator<Entity, Params = undefined> extends PromiseLike<Entit
   ): Promise<IteratorResult<Entity, undefined>>;
   throw(e?: unknown): Promise<IteratorResult<Entity, undefined>>;
 
-  values(): AsyncIterableIterator<Entity>;
+  values(): AsyncIterator<Entity>;
 
   [Symbol.asyncIterator](): AsyncIterator<
     Entity,
